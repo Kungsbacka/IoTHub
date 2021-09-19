@@ -1,24 +1,28 @@
 ﻿using IoTHub.Model;
 using Microsoft.Data.SqlClient;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace IoTHub
 {
     public class ActilityPayloadRouter : IPayloadRouter
     {
-        private const int CACHE_EXPIRATION_IN_MINUTES = 1;
-        private readonly Dictionary<string, string> _storedProcedureCache;
+        // This way of routing based on a lookup table with device IDs and stored
+        // procedures will not scale, but will do for now.
+        private const int CACHE_EXPIRATION_IN_MINUTES = 5;
+        private readonly ConcurrentDictionary<string, string> _storedProcedureCache;
         private readonly string _connectionString;
-        private DateTime _storedProcedureCacheLastUpdated;
+
+        private readonly object _cacheUpdateTimeLock = new object();
+        private DateTime _cacheUpdateTime;
 
         public ActilityPayloadRouter(string connectionString)
         {
             _connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
-            _storedProcedureCache = new Dictionary<string, string>();
-            _storedProcedureCacheLastUpdated = DateTime.MinValue;
+            _storedProcedureCache = new ConcurrentDictionary<string, string>();
+            _cacheUpdateTime = DateTime.MinValue;
         }
 
         public async Task RoutePayload(ActilityUplinkData payload)
@@ -44,13 +48,19 @@ namespace IoTHub
             await sqlCommand.ExecuteNonQueryAsync();
         }
 
+        // Lock _cacheUpdateTime only to avoid long delays for other requests when the cache
+        // is updated. This will allow other requests to read from the cache while it's being
+        // updated.
         private async Task UpdateStoreProcedureCacheIfNeeded()
         {
-            if (DateTime.Now < _storedProcedureCacheLastUpdated.AddMinutes(CACHE_EXPIRATION_IN_MINUTES))
+            lock (_cacheUpdateTimeLock)
             {
-                return;
+                if (DateTime.Now < _cacheUpdateTime.AddMinutes(CACHE_EXPIRATION_IN_MINUTES))
+                {
+                    return;
+                }
+                _cacheUpdateTime = DateTime.Now;
             }
-            _storedProcedureCache.Clear();
             using SqlConnection sqlConnection = new SqlConnection(_connectionString);
             await sqlConnection.OpenAsync();
             using SqlCommand sqlCommand = new SqlCommand()
@@ -62,9 +72,10 @@ namespace IoTHub
             using SqlDataReader reader = await sqlCommand.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
-                _storedProcedureCache.Add(reader.GetString(0), reader.GetString(1));
+                string deviceId = reader.GetString(0);
+                string storedProcedure = reader.GetString(1);
+                _storedProcedureCache[deviceId] = storedProcedure;
             }
-            _storedProcedureCacheLastUpdated = DateTime.Now;
         }
     }
 }

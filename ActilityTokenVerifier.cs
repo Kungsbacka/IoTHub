@@ -7,7 +7,7 @@ using System.Text;
 namespace IoTHub
 {
 
-    public class ActilityTokenVerifier : IActilityTokenVerifier, IDisposable
+    public class ActilityTokenVerifier : IActilityTokenVerifier
     {
         private static ReadOnlySpan<byte> _hexLookup => new byte[]
         {
@@ -28,14 +28,9 @@ namespace IoTHub
             0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
             0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 
         };
-        private readonly SHA256 _sha256;
-        private readonly StringBuilder _sb;
-        private bool _disposed;
 
         public ActilityTokenVerifier()
         {
-            _sha256 = SHA256.Create();
-            _sb = new StringBuilder(250);
         }
 
         public bool IsTokenValid(ActilityUplinkData data, IQueryCollection query, string authenticationKey)
@@ -54,14 +49,14 @@ namespace IoTHub
                 throw new ArgumentException("Invalid token");
             }
 
-            _sb.Clear();
+            StringBuilder sb = new StringBuilder();
 
             // Add body elements
-            _sb.Append(data.DevEUI_Uplink.CustomerID);
-            _sb.Append(data.DevEUI_Uplink.DevEUI);
-            _sb.Append(data.DevEUI_Uplink.FPort);
-            _sb.Append(data.DevEUI_Uplink.FCntUp);
-            _sb.Append(data.DevEUI_Uplink.Payload_Hex);
+            sb.Append(data.DevEUI_Uplink.CustomerID);
+            sb.Append(data.DevEUI_Uplink.DevEUI);
+            sb.Append(data.DevEUI_Uplink.FPort);
+            sb.Append(data.DevEUI_Uplink.FCntUp);
+            sb.Append(data.DevEUI_Uplink.Payload_Hex);
 
             // Add query string without token
             foreach (var kvp in query)
@@ -70,17 +65,18 @@ namespace IoTHub
                 {
                     continue;
                 }
-                _sb.Append(kvp.Key);
-                _sb.Append('=');
-                _sb.Append(kvp.Value);
-                _sb.Append('&');
+                sb.Append(kvp.Key);
+                sb.Append('=');
+                sb.Append(kvp.Value);
+                sb.Append('&');
             }
-            _sb.Length--;
+            sb.Length--;
 
             // Add tunnel authentication key
-            _sb.Append(authenticationKey);
+            sb.Append(authenticationKey);
 
-            byte[] calculatedToken = _sha256.ComputeHash(Encoding.ASCII.GetBytes(_sb.ToString()));
+            using SHA256 sha256 = SHA256.Create();
+            byte[] calculatedToken = sha256.ComputeHash(Encoding.ASCII.GetBytes(sb.ToString()));
 
             for (int i = 0; i < token.Length; i += 2)
             {
@@ -90,29 +86,7 @@ namespace IoTHub
                     return false;
                 }
             }
-
             return true;
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!_disposed)
-            {
-                if (disposing)
-                {
-                    if (_sha256 != null)
-                    {
-                        _sha256.Dispose();
-                    }
-                }
-                _disposed = true;
-            }
-        }
-
-        public void Dispose()
-        {
-            Dispose(disposing: true);
-            GC.SuppressFinalize(this);
         }
     }
 }

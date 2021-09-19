@@ -1,2 +1,3 @@
 # IoTHub
-Custom API for receiving, storing and dispatching IoT data
+
+Custom API for receiving IoT device data from Actility and store it in a database.
