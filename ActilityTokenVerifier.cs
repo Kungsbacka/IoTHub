@@ -9,7 +9,7 @@ namespace IoTHub
 
     public class ActilityTokenVerifier : IActilityTokenVerifier
     {
-        private static ReadOnlySpan<byte> _hexLookup => new byte[]
+        private static ReadOnlySpan<byte> HexLookup => new byte[]
         {
             0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
             0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
@@ -80,7 +80,7 @@ namespace IoTHub
 
             for (int i = 0; i < token.Length; i += 2)
             {
-                byte b = (byte)(_hexLookup[(byte)token[i]] * 16 + _hexLookup[(byte)token[i + 1]]);
+                byte b = (byte)(HexLookup[(byte)token[i]] * 16 + HexLookup[(byte)token[i + 1]]);
                 if (b != calculatedToken[i / 2])
                 {
                     return false;
