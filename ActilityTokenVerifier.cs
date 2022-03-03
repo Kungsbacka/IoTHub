@@ -49,7 +49,7 @@ namespace IoTHub
                 throw new ArgumentException("Invalid token");
             }
 
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
 
             // Add body elements
             sb.Append(data.DevEUI_Uplink.CustomerID);

@@ -15,7 +15,7 @@ namespace IoTHub
         private readonly ConcurrentDictionary<string, string> _storedProcedureCache;
         private readonly string _connectionString;
 
-        private readonly object _cacheUpdateTimeLock = new object();
+        private readonly object _cacheUpdateTimeLock = new();
         private DateTime _cacheUpdateTime;
 
         public ActilityPayloadRouter(string connectionString)
@@ -32,9 +32,9 @@ namespace IoTHub
             {
                 storedProcedure = "dbo.insert_non_routed_data";
             }
-            using SqlConnection sqlConnection = new SqlConnection(_connectionString);
+            using SqlConnection sqlConnection = new(_connectionString);
             await sqlConnection.OpenAsync();
-            using SqlCommand sqlCommand = new SqlCommand()
+            using SqlCommand sqlCommand = new()
             {
                 Connection = sqlConnection,
                 CommandText = storedProcedure,
@@ -61,9 +61,9 @@ namespace IoTHub
                 }
                 _cacheUpdateTime = DateTime.Now;
             }
-            using SqlConnection sqlConnection = new SqlConnection(_connectionString);
+            using SqlConnection sqlConnection = new(_connectionString);
             await sqlConnection.OpenAsync();
-            using SqlCommand sqlCommand = new SqlCommand()
+            using SqlCommand sqlCommand = new()
             {
                 Connection = sqlConnection,
                 CommandText = "dbo.get_device_and_stored_procedure",
