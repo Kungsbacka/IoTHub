@@ -44,6 +44,7 @@ namespace IoTHub
             sqlCommand.Parameters.AddWithValue("deviceId", payload.DevEUI_Uplink.DevEUI);
             sqlCommand.Parameters.AddWithValue("deviceModel", payload.DevEUI_Uplink.CustomerData?.Alr?.Pro);
             sqlCommand.Parameters.AddWithValue("deviceVersion", payload.DevEUI_Uplink.CustomerData?.Alr?.Ver);
+            sqlCommand.Parameters.AddWithValue("port", payload.DevEUI_Uplink.FPort);
             sqlCommand.Parameters.AddWithValue("payload", payload.DevEUI_Uplink.Payload_Hex);
             await sqlCommand.ExecuteNonQueryAsync();
         }
