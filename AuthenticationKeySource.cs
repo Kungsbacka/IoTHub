@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Text;
 
 namespace IoTHub
 {
+    [SupportedOSPlatform("Windows")]
     public class AuthenticationKeySource : IAuthenticationKeySource
     {
         private readonly string _clearTextKey;

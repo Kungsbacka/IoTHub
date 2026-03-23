@@ -2,7 +2,6 @@
 using Microsoft.Data.SqlClient;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace IoTHub
@@ -27,7 +26,7 @@ namespace IoTHub
 
         public async Task RoutePayload(ActilityUplinkData payload)
         {
-            await UpdateStoreProcedureCacheIfNeeded();
+            await UpdateStoredProcedureCacheIfNeeded();
             if (!_storedProcedureCache.TryGetValue(payload.DevEUI_Uplink.DevEUI, out string storedProcedure))
             {
                 storedProcedure = "dbo.insert_non_routed_data";
@@ -49,10 +48,9 @@ namespace IoTHub
             await sqlCommand.ExecuteNonQueryAsync();
         }
 
-        // Lock _cacheUpdateTime only to avoid long delays for other requests when the cache
-        // is updated. This will allow other requests to read from the cache while it's being
-        // updated.
-        private async Task UpdateStoreProcedureCacheIfNeeded()
+        // Lock _cacheUpdateTime *only* to avoid long delays for subsequent requests when the cache
+        // is being updated.
+        private async Task UpdateStoredProcedureCacheIfNeeded()
         {
             lock (_cacheUpdateTimeLock)
             {

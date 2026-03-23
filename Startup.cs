@@ -1,3 +1,4 @@
+using System.Runtime.Versioning;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -6,6 +7,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace IoTHub
 {
+    [SupportedOSPlatform("Windows")]
     public class Startup
     {
         public Startup(IConfiguration configuration)

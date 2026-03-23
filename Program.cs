@@ -1,8 +1,10 @@
+using System.Runtime.Versioning;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 
 namespace IoTHub
 {
+    [SupportedOSPlatform("Windows")]
     public class Program
     {
         public static void Main(string[] args)
