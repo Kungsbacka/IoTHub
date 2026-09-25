@@ -1,9 +1,13 @@
-using System.Runtime.Versioning;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System;
+using System.IO;
+using System.Runtime.Versioning;
+using System.Text;
 
 namespace IoTHub
 {
@@ -22,13 +26,21 @@ namespace IoTHub
         {
             services.AddControllers();
             services.AddSingleton<IActilityTokenVerifier, ActilityTokenVerifier>();
+
             services.AddSingleton<IAuthenticationKeySource, AuthenticationKeySource>((_) =>
             {
                 return new AuthenticationKeySource(Configuration["Actility:TunnelInterfaceAuthenticationKey"]);
             });
+
             services.AddSingleton<IPayloadRouter, ActilityPayloadRouter>((_) =>
             {
                 return new ActilityPayloadRouter(Configuration.GetConnectionString("Telemetry"));
+            });
+
+            services.AddSingleton<IActilityEnvelopeDumper>((_) =>
+            {
+                return new ActilityEnvelopeDumper(
+                    Configuration.GetConnectionString("Telemetry"));
             });
         }
 
@@ -44,6 +56,9 @@ namespace IoTHub
             app.UseHttpsRedirection();
 
             app.UseRouting();
+
+            //Fånga Actilityns råa request för att dumpa den till databastabell i loggningssyfte.
+            app.UseActilityEnvelopeDump(Configuration.GetValue<bool>("Actility:DumpEnvelope"));
 
             app.UseAuthorization();
 
